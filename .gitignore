@@ -1,0 +1,4 @@
+build/
+bin/breakout.exe
+bin/CMakeFiles
+TODO.txt
