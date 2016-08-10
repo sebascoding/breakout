@@ -1,0 +1,1 @@
+This game is based on the 2D Game tutorial created by [Joey de Vries](http://joeydevries.com/) which can be found in http://learnopengl.com/ .
