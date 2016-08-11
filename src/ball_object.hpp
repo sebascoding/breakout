@@ -32,8 +32,9 @@ public:
     BallObject(glm::vec2 pos, GLfloat radius, glm::vec2 velocity, Texture2D sprite);
     // Moves the ball, keeping it constrained within the window bounds (except bottom edge); returns new position
     glm::vec2 Move(GLfloat dt, GLuint window_width);
-    // Resets the ball to original state with given position and velocity
-    void      Reset(glm::vec2 position, glm::vec2 velocity);
+    // Resets the ball to original state with given position, velocity and radius
+    void      Reset(glm::vec2 position, glm::vec2 velocity, GLfloat radius);
+	void	  Resize(GLfloat radius);
 };
 
 #endif
