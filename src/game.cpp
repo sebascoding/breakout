@@ -75,6 +75,8 @@ void Game::Init()
     ResourceManager::LoadTexture("assets/textures/powerup_confuse.png", GL_TRUE, "powerup_confuse");
     ResourceManager::LoadTexture("assets/textures/powerup_chaos.png", GL_TRUE, "powerup_chaos");
     ResourceManager::LoadTexture("assets/textures/powerup_passthrough.png", GL_TRUE, "powerup_passthrough");
+	ResourceManager::LoadTexture("assets/textures/powerup_decrease.png", GL_TRUE, "powerup_decrease");
+	ResourceManager::LoadTexture("assets/textures/powerup_bigball.png", GL_TRUE, "powerup_bigball");
     // Set render-specific controls
     Renderer = new SpriteRenderer(ResourceManager::GetShader("sprite"));
     Particles = new ParticleGenerator(ResourceManager::GetShader("particle"), ResourceManager::GetTexture("particle"), 500);
@@ -260,7 +262,7 @@ void Game::ResetPlayer()
     // Reset player/ball stats
     Player->Size = PLAYER_SIZE;
     Player->Position = glm::vec2(this->Width / 2 - PLAYER_SIZE.x / 2, this->Height - PLAYER_SIZE.y);
-    Ball->Reset(Player->Position + glm::vec2(PLAYER_SIZE.x / 2 - BALL_RADIUS, -(BALL_RADIUS * 2)), INITIAL_BALL_VELOCITY);
+    Ball->Reset(Player->Position + glm::vec2(PLAYER_SIZE.x / 2 - BALL_RADIUS, -(BALL_RADIUS * 2)), INITIAL_BALL_VELOCITY, BALL_RADIUS);
     // Also disable all active powerups
     Effects->Chaos = Effects->Confuse = GL_FALSE;
     Ball->PassThrough = Ball->Sticky = GL_FALSE;
@@ -340,7 +342,11 @@ void Game::SpawnPowerUps(GameObject &block)
     if (ShouldSpawn(75))
         this->PowerUps.push_back(PowerUp("pass-through", glm::vec3(0.5f, 1.0f, 0.5f), 10.0f, block.Position, ResourceManager::GetTexture("powerup_passthrough")));
     if (ShouldSpawn(75))
-        this->PowerUps.push_back(PowerUp("pad-size-increase", glm::vec3(1.0f, 0.6f, 0.4), 0.0f, block.Position, ResourceManager::GetTexture("powerup_increase")));
+        this->PowerUps.push_back(PowerUp("pad-size-increase", glm::vec3(1.0f, 0.6f, 0.4f), 0.0f, block.Position, ResourceManager::GetTexture("powerup_increase")));
+	if (ShouldSpawn(2))
+		this->PowerUps.push_back(PowerUp("ball-big", glm::vec3(0.15f, 0.55f, 0.15f), 0.0f, block.Position, ResourceManager::GetTexture("powerup_bigball")));
+	if (ShouldSpawn(15))
+		this->PowerUps.push_back(PowerUp("pad-size-decrease", glm::vec3(0.8f, 0.6f, 0.2f), 0.0f, block.Position, ResourceManager::GetTexture("powerup_decrease")));
     if (ShouldSpawn(15)) // Negative powerups should spawn more often
         this->PowerUps.push_back(PowerUp("confuse", glm::vec3(1.0f, 0.3f, 0.3f), 15.0f, block.Position, ResourceManager::GetTexture("powerup_confuse")));
     if (ShouldSpawn(15))
@@ -368,6 +374,16 @@ void ActivatePowerUp(PowerUp &powerUp)
     {
         Player->Size.x += 50;
     }
+	else if (powerUp.Type == "ball-big")
+	{
+		Ball->Resize(BALL_RADIUS * 2);
+	}
+	else if (powerUp.Type == "pad-size-decrease")
+	{
+		Player->Size.x -= 50;
+		if (Player->Size.x < 50)
+			Player->Size.x = 50;
+	}
     else if (powerUp.Type == "confuse")
     {
         if (!Effects->Chaos)
@@ -378,6 +394,7 @@ void ActivatePowerUp(PowerUp &powerUp)
         if (!Effects->Confuse)
             Effects->Chaos = GL_TRUE;
     }
+
 }
 
 GLboolean IsOtherPowerUpActive(std::vector<PowerUp> &powerUps, std::string type)

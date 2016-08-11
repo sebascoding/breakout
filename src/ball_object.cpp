@@ -42,12 +42,20 @@ glm::vec2 BallObject::Move(GLfloat dt, GLuint window_width)
     return this->Position;
 }
 
-// Resets the ball to initial Stuck Position (if ball is outside window bounds)
-void BallObject::Reset(glm::vec2 position, glm::vec2 velocity)
+// Resets the ball to initial Stuck Position and size (if ball is outside window bounds)
+void BallObject::Reset(glm::vec2 position, glm::vec2 velocity, GLfloat radius)
 {
     this->Position = position;
     this->Velocity = velocity;
     this->Stuck = GL_TRUE;
 	this->Sticky = GL_FALSE;
 	this->PassThrough = GL_FALSE;
+	this->Resize(radius);
+}
+
+// Resize the ball with the given radius
+void BallObject::Resize(GLfloat radius)
+{
+	this->Radius = radius;
+	this->Size = glm::vec2(radius * 2, radius * 2);
 }
