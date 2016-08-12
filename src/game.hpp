@@ -41,6 +41,8 @@ const GLfloat PLAYER_VELOCITY(500.0f);
 const glm::vec2 INITIAL_BALL_VELOCITY(100.0f, -350.0f);
 // Radius of the ball object
 const GLfloat BALL_RADIUS = 12.5f;
+// Amount of ball particles
+const GLuint PARTICLE_AMOUNT = 500;
 
 // Game holds all game-related state and functionality.
 // Combines all game-related data into a single class for

@@ -118,3 +118,18 @@ void ParticleGenerator::respawnParticle(Particle &particle, GameObject &object, 
     particle.Life = 1.0f;
     particle.Velocity = object.Velocity * 0.1f;
 }
+
+void ParticleGenerator::UpdateAmount(GLuint amount)
+{
+	if (amount >= this->amount)
+	{
+		for (int i = this->amount; i < amount; i++)		
+			particles.push_back(Particle());		
+	}
+	else
+	{
+		particles.resize(amount);
+	}
+
+	this->amount = amount;
+}

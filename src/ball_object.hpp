@@ -35,6 +35,7 @@ public:
     // Resets the ball to original state with given position, velocity and radius
     void      Reset(glm::vec2 position, glm::vec2 velocity, GLfloat radius);
 	void	  Resize(GLfloat radius);
+	BallObject *clone();
 };
 
 #endif

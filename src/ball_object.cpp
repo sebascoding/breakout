@@ -59,3 +59,10 @@ void BallObject::Resize(GLfloat radius)
 	this->Radius = radius;
 	this->Size = glm::vec2(radius * 2, radius * 2);
 }
+
+BallObject *BallObject::clone()
+{
+	BallObject *newball = (BallObject *)malloc(sizeof(BallObject));
+	memcpy(newball, this, sizeof(BallObject));
+	return newball;
+}
