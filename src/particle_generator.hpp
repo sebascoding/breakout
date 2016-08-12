@@ -40,6 +40,7 @@ public:
     void Update(GLfloat dt, GameObject &object, GLuint newParticles, glm::vec2 offset = glm::vec2(0.0f, 0.0f));
     // Render all particles
     void Draw();
+	void UpdateAmount(GLuint amount);
 private:
     // State
     std::vector<Particle> particles;
