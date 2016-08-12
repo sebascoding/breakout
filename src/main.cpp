@@ -14,8 +14,9 @@
 #include "resource_manager.hpp"
 
 
-// GLFW function declerations
+// GLFW function declarations
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
+void resize_window_callback(GLFWwindow* window, int width, int height);
 
 // The Width of the screen
 const GLuint SCREEN_WIDTH = 800;
@@ -40,6 +41,8 @@ int main(int argc, char *argv[])
     glGetError(); // Call it once to catch glewInit() bug, all other errors are now from our application.
 
     glfwSetKeyCallback(window, key_callback);
+	glfwSetWindowSizeCallback(window, resize_window_callback);
+	
 
     // OpenGL configuration
     glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -102,4 +105,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			Breakout.KeysProcessed[key] = GL_FALSE;
 		}
     }
+}
+
+void resize_window_callback(GLFWwindow* window, int width, int height)
+{
+	glViewport(0, 0, width, height);
+	Breakout.Resize(width, height);
 }
