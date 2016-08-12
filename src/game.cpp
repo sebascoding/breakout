@@ -33,10 +33,11 @@ PostProcessor				*Effects;
 ISoundEngine				*SoundEngine = createIrrKlangDevice();
 GLfloat						ShakeTime = 0.0f;
 TextRenderer				*Text;
+GLuint						BricksLeft;
 
 
 Game::Game(GLuint width, GLuint height) 
-    : State(GAME_MENU), Keys(), Width(width), Height(height), Level(0), Lives(3)
+    : State(GAME_MENU), Keys(), Width(width), Height(height), Level(0), Lives(3), Score(0)
 { 
 
 }
@@ -97,6 +98,7 @@ void Game::Init()
     this->Levels.push_back(three);
     this->Levels.push_back(four);
     this->Level = 0;
+	BricksLeft = this->Levels[this->Level].CountBlocks(GL_FALSE);
     // Configure game objects
     glm::vec2 playerPos = glm::vec2(this->Width / 2 - PLAYER_SIZE.x / 2, this->Height - PLAYER_SIZE.y);
     Player = new GameObject(playerPos, PLAYER_SIZE, ResourceManager::GetTexture("paddle"));
@@ -161,11 +163,13 @@ void Game::ProcessInput(GLfloat dt)
         if (this->Keys[GLFW_KEY_ENTER] && !this->KeysProcessed[GLFW_KEY_ENTER])
         {
             this->State = GAME_ACTIVE;
+			this->Score = 0;
             this->KeysProcessed[GLFW_KEY_ENTER] = GL_TRUE;
         }
         if (this->Keys[GLFW_KEY_W] && !this->KeysProcessed[GLFW_KEY_W])
         {
             this->Level = (this->Level + 1) % 4;
+			BricksLeft = this->Levels[this->Level].CountBlocks(GL_FALSE);
             this->KeysProcessed[GLFW_KEY_W] = GL_TRUE;
         }
         if (this->Keys[GLFW_KEY_S] && !this->KeysProcessed[GLFW_KEY_S])
@@ -174,6 +178,7 @@ void Game::ProcessInput(GLfloat dt)
                 --this->Level;
             else
                 this->Level = 3;
+			BricksLeft = this->Levels[this->Level].CountBlocks(GL_FALSE);
             this->KeysProcessed[GLFW_KEY_S] = GL_TRUE;
         }
     }
@@ -244,8 +249,12 @@ void Game::Render()
         // Render postprocessing quad
         Effects->Render(glfwGetTime());
         // Render text (don't include in postprocessing)
-        std::stringstream ss; ss << this->Lives;
-        Text->RenderText("Lives:" + ss.str(), 5.0f, 5.0f, 1.0f);
+        std::stringstream sLives; sLives << this->Lives;
+		std::stringstream sScore; sScore << this->Score;
+		std::stringstream sBricks; sBricks << BricksLeft;
+        Text->RenderText("Lives:" + sLives.str(), 5.0f, 5.0f, 1.0f);
+		Text->RenderText("Score:" + sScore.str(), this->Width/2 - 50, 5.0f, 1.0f);
+		Text->RenderText("Bricks left:" + sBricks.str(), this->Width - 230, 5.0f, 1.0f);
     }
     if (this->State == GAME_MENU)
     {
@@ -262,15 +271,16 @@ void Game::Render()
 
 void Game::ResetLevel()
 {
-    if (this->Level == 0)this->Levels[0].Load("levels/one.lvl", this->Width, this->Height * 0.5f);
+    if (this->Level == 0)this->Levels[0].Load("assets/levels/one.lvl", this->Width, this->Height * 0.5f);
     else if (this->Level == 1)
-        this->Levels[1].Load("levels/two.lvl", this->Width, this->Height * 0.5f);
+        this->Levels[1].Load("assets/levels/two.lvl", this->Width, this->Height * 0.5f);
     else if (this->Level == 2)
-        this->Levels[2].Load("levels/three.lvl", this->Width, this->Height * 0.5f);
+        this->Levels[2].Load("assets/levels/three.lvl", this->Width, this->Height * 0.5f);
     else if (this->Level == 3)
-        this->Levels[3].Load("levels/four.lvl", this->Width, this->Height * 0.5f);
+        this->Levels[3].Load("assets/levels/four.lvl", this->Width, this->Height * 0.5f);
 
     this->Lives = 3;
+	BricksLeft = this->Levels[this->Level].CountBlocks(GL_FALSE);
 }
 
 void Game::ResetPlayer()
@@ -280,10 +290,14 @@ void Game::ResetPlayer()
     Player->Position = glm::vec2(this->Width / 2 - PLAYER_SIZE.x / 2, this->Height - PLAYER_SIZE.y);
 
 	glm::vec2 ballPos = Player->Position + glm::vec2(PLAYER_SIZE.x / 2 - BALL_RADIUS, -BALL_RADIUS * 2);
+	Balls.clear();
 	Balls.push_back(new BallObject(ballPos, BALL_RADIUS, INITIAL_BALL_VELOCITY, ResourceManager::GetTexture("face")));
 
     Effects->Chaos = Effects->Confuse = GL_FALSE;
     Player->Color = glm::vec3(1.0f);
+
+	this->ClearPowerUps();
+	Particles->Reset();
 }
 
 
@@ -370,6 +384,11 @@ void Game::UpdatePowerUps(GLfloat dt)
     this->PowerUps.erase(std::remove_if(this->PowerUps.begin(), this->PowerUps.end(),
         [](const PowerUp &powerUp) { return powerUp.Destroyed && !powerUp.Activated; }
     ), this->PowerUps.end());
+}
+
+void Game::ClearPowerUps()
+{
+	PowerUps.clear();
 }
 
 GLboolean ShouldSpawn(GLuint chance)
@@ -499,6 +518,8 @@ void Game::DoCollisions()
 						box.Destroyed = GL_TRUE;
 						this->SpawnPowerUps(box);
 						SoundEngine->play2D("assets/audio/bleep.mp3", GL_FALSE);
+						BricksLeft--;
+						this->Score += 3;
 					}
 					else
 					{   // if block is solid, enable shake effect

@@ -41,6 +41,7 @@ public:
     // Render all particles
     void Draw();
 	void UpdateAmount(GLuint amount);
+	void Reset();
 private:
     // State
     std::vector<Particle> particles;

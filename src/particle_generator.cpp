@@ -133,3 +133,10 @@ void ParticleGenerator::UpdateAmount(GLuint amount)
 
 	this->amount = amount;
 }
+
+void ParticleGenerator::Reset()
+{
+	particles.clear();
+	for (GLuint i = 0; i < this->amount; ++i)
+		this->particles.push_back(Particle());
+}
