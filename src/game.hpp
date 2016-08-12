@@ -64,6 +64,8 @@ public:
     ~Game();
     // Initialize game state (load all shaders/textures/levels)
     void Init();
+	// Resize Game window
+	void Resize(GLuint width, GLuint height) { this->Width = width; this->Height = height; }
     // GameLoop
     void ProcessInput(GLfloat dt);
     void Update(GLfloat dt);
