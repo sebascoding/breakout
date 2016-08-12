@@ -17,9 +17,9 @@
 
 
 // The size of a PowerUp block
-const glm::vec2 SIZE(60, 20);
+static const glm::vec2 SIZE(60, 15);
 // Velocity a PowerUp block has when spawned
-const glm::vec2 VELOCITY(0.0f, 150.0f);
+static const glm::vec2 VELOCITY(0.0f, 150.0f);
 
 
 // PowerUp inherits its state and rendering functions from
@@ -36,6 +36,8 @@ public:
 	// Constructor
 	PowerUp(std::string type, glm::vec3 color, GLfloat duration, glm::vec2 position, Texture2D texture)
 		: GameObject(position, SIZE, texture, color, VELOCITY), Type(type), Duration(duration), Activated() { }
+	PowerUp(std::string type, glm::vec3 color, GLfloat duration, glm::vec2 position, Texture2D texture, glm::vec2 velocity)
+		: GameObject(position, SIZE, texture, color, velocity), Type(type), Duration(duration), Activated() { }
 };
 
 #endif

@@ -8,6 +8,8 @@
 ******************************************************************/
 #include <algorithm>
 #include <sstream>
+#include <cstdlib>
+#include <ctime>
 
 #include <irrKlang.h>
 using namespace irrklang;
@@ -322,6 +324,30 @@ void Game::UpdatePowerUps(GLfloat dt)
 						}
                     }
                 }
+				else if (powerUp.Type == "pad-size-increase")
+				{
+					if (!IsOtherPowerUpActive(this->PowerUps, "pad-size-increase"))
+					{
+						Player->Size = PLAYER_SIZE;
+					}
+				}
+				else if (powerUp.Type == "ball-big")
+				{
+					if (!IsOtherPowerUpActive(this->PowerUps, "ball-big"))
+					{
+						for (BallObject *Ball : Balls)
+						{
+							Ball->Resize(BALL_RADIUS);
+						}
+					}
+				}
+				else if (powerUp.Type == "pad-size-decrease")
+				{
+					if (!IsOtherPowerUpActive(this->PowerUps, "pad-size-decrease"))
+					{
+						Player->Size = PLAYER_SIZE;
+					}
+				}
                 else if (powerUp.Type == "confuse")
                 {
                     if (!IsOtherPowerUpActive(this->PowerUps, "confuse"))
@@ -335,7 +361,7 @@ void Game::UpdatePowerUps(GLfloat dt)
                     {	// Only reset if no other PowerUp of type chaos is active
                         Effects->Chaos = GL_FALSE;
                     }
-                }
+                }				
             }
         }
     }
@@ -351,22 +377,28 @@ GLboolean ShouldSpawn(GLuint chance)
     GLuint random = rand() % chance;
     return random == 0;
 }
+
+glm::vec2 PowerUpVelocity() {
+	srand(static_cast <unsigned> (time(0)));
+	float r = static_cast <float> (rand() % 10) / 10.0f + 0.5f;
+	return VELOCITY * (r);
+}
 void Game::SpawnPowerUps(GameObject &block)
 {
     if (ShouldSpawn(75)) // 1 in 75 chance
-        this->PowerUps.push_back(PowerUp("speed", glm::vec3(0.5f, 0.5f, 1.0f), 0.0f, block.Position, ResourceManager::GetTexture("powerup_speed")));
+        this->PowerUps.push_back(PowerUp("speed", glm::vec3(0.5f, 0.5f, 1.0f), 0.0f, block.Position, ResourceManager::GetTexture("powerup_speed"), VELOCITY * 1.5f));
     if (ShouldSpawn(75))
-        this->PowerUps.push_back(PowerUp("sticky", glm::vec3(1.0f, 0.5f, 1.0f), 20.0f, block.Position, ResourceManager::GetTexture("powerup_sticky")));
+        this->PowerUps.push_back(PowerUp("sticky", glm::vec3(1.0f, 0.5f, 1.0f), 20.0f, block.Position, ResourceManager::GetTexture("powerup_sticky"), VELOCITY * 1.5f));
     if (ShouldSpawn(75))
-        this->PowerUps.push_back(PowerUp("pass-through", glm::vec3(0.5f, 1.0f, 0.5f), 10.0f, block.Position, ResourceManager::GetTexture("powerup_passthrough")));
+        this->PowerUps.push_back(PowerUp("pass-through", glm::vec3(0.5f, 1.0f, 0.5f), 10.0f, block.Position, ResourceManager::GetTexture("powerup_passthrough"), VELOCITY * 1.5f));
     if (ShouldSpawn(75))
-        this->PowerUps.push_back(PowerUp("pad-size-increase", glm::vec3(1.0f, 0.6f, 0.4f), 0.0f, block.Position, ResourceManager::GetTexture("powerup_increase")));
+        this->PowerUps.push_back(PowerUp("pad-size-increase", glm::vec3(1.0f, 0.6f, 0.4f), 10.0f, block.Position, ResourceManager::GetTexture("powerup_increase"), VELOCITY * 1.5f));
 	if (ShouldSpawn(75))
-		this->PowerUps.push_back(PowerUp("ball-big", glm::vec3(0.15f, 0.55f, 0.15f), 0.0f, block.Position, ResourceManager::GetTexture("powerup_bigball")));
-	if (ShouldSpawn(2))
-		this->PowerUps.push_back(PowerUp("ball-multi", glm::vec3(0.15f, 0.55f, 0.15f), 0.0f, block.Position, ResourceManager::GetTexture("powerup_multiball")));
+		this->PowerUps.push_back(PowerUp("ball-big", glm::vec3(0.15f, 0.55f, 0.15f), 10.0f, block.Position, ResourceManager::GetTexture("powerup_bigball"), VELOCITY * 1.5f));
+	if (ShouldSpawn(75))
+		this->PowerUps.push_back(PowerUp("ball-multi", glm::vec3(0.15f, 0.55f, 0.15f), 0.0f, block.Position, ResourceManager::GetTexture("powerup_multiball"), VELOCITY * 1.5f));
 	if (ShouldSpawn(15))
-		this->PowerUps.push_back(PowerUp("pad-size-decrease", glm::vec3(0.8f, 0.6f, 0.2f), 0.0f, block.Position, ResourceManager::GetTexture("powerup_decrease")));
+		this->PowerUps.push_back(PowerUp("pad-size-decrease", glm::vec3(0.8f, 0.6f, 0.2f), 20.0f, block.Position, ResourceManager::GetTexture("powerup_decrease")));
     if (ShouldSpawn(15)) // Negative powerups should spawn more often
         this->PowerUps.push_back(PowerUp("confuse", glm::vec3(1.0f, 0.3f, 0.3f), 15.0f, block.Position, ResourceManager::GetTexture("powerup_confuse")));
     if (ShouldSpawn(15))
