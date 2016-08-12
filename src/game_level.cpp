@@ -91,3 +91,14 @@ void GameLevel::init(std::vector<std::vector<GLuint>> tileData, GLuint levelWidt
         }
     }
 }
+
+GLuint GameLevel::CountBlocks(GLboolean solid)
+{
+	GLuint num_blocks = 0;
+
+	for (GameObject &tile : this->Bricks)
+		if (!tile.IsSolid || (tile.IsSolid && solid))
+			num_blocks++;
+
+	return num_blocks;
+}

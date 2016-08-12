@@ -33,6 +33,8 @@ public:
     void      Draw(SpriteRenderer &renderer);
     // Check if the level is completed (all non-solid tiles are destroyed)
     GLboolean IsCompleted();
+	// Number of blocks
+	GLuint	  CountBlocks(GLboolean solid = GL_TRUE);
 private:
     // Initialize level from tile data
     void      init(std::vector<std::vector<GLuint>> tileData, GLuint levelWidth, GLuint levelHeight);

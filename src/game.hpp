@@ -52,6 +52,7 @@ class Game
 public:
     // Game state
 	GLuint				   Lives;
+	GLuint				   Score;
     GameState              State;	
     GLboolean              Keys[1024];
 	GLboolean			   KeysProcessed[1024];
@@ -77,6 +78,7 @@ public:
 	//PowerUps
 	void SpawnPowerUps(GameObject &block);
 	void UpdatePowerUps(GLfloat dt);
+	void ClearPowerUps();
 };
 
 #endif
