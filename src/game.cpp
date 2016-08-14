@@ -28,13 +28,16 @@ using namespace irrklang;
 SpriteRenderer				*Renderer;
 GameObject					*Player;
 std::vector<BallObject *>	Balls;
-ParticleGenerator			*Particles;
+std::map<BallObject *, ParticleGenerator *>					ballParticle;
 PostProcessor				*Effects;
 ISoundEngine				*SoundEngine = createIrrKlangDevice();
 GLfloat						ShakeTime = 0.0f;
 TextRenderer				*Text;
 GLuint						BricksLeft;
 
+
+void AddBall(BallObject *ball);
+std::vector<BallObject *>::iterator RemoveBall(BallObject *ball);
 
 Game::Game(GLuint width, GLuint height) 
     : State(GAME_MENU), Keys(), Width(width), Height(height), Level(0), Lives(3), Score(0)
@@ -46,9 +49,8 @@ Game::~Game()
 {
     delete Renderer;
     delete Player;
-	for (BallObject *Ball : Balls)
-		delete Ball;
-    delete Particles;
+	for (std::vector<BallObject *>::iterator it = Balls.begin(); it != Balls.end();)
+		it = RemoveBall((*it));
     delete Effects;
     delete Text;
     SoundEngine->drop();
@@ -84,7 +86,6 @@ void Game::Init()
 	ResourceManager::LoadTexture("assets/textures/powerup_multiball.png", GL_TRUE, "powerup_multiball");
     // Set render-specific controls
     Renderer = new SpriteRenderer(ResourceManager::GetShader("sprite"));
-    Particles = new ParticleGenerator(ResourceManager::GetShader("particle"), ResourceManager::GetTexture("particle"), PARTICLE_AMOUNT);
     Effects = new PostProcessor(ResourceManager::GetShader("postprocessing"), this->Width, this->Height);
     Text = new TextRenderer(this->Width, this->Height);
     Text->Load("assets/fonts/ocraext.ttf", 24);
@@ -103,7 +104,8 @@ void Game::Init()
     glm::vec2 playerPos = glm::vec2(this->Width / 2 - PLAYER_SIZE.x / 2, this->Height - PLAYER_SIZE.y);
     Player = new GameObject(playerPos, PLAYER_SIZE, ResourceManager::GetTexture("paddle"));
     glm::vec2 ballPos = playerPos + glm::vec2(PLAYER_SIZE.x / 2 - BALL_RADIUS, -BALL_RADIUS * 2);
-    Balls.push_back(new BallObject(ballPos, BALL_RADIUS, INITIAL_BALL_VELOCITY, ResourceManager::GetTexture("face")));
+	BallObject *ball = new BallObject(ballPos, BALL_RADIUS, INITIAL_BALL_VELOCITY, ResourceManager::GetTexture("face"));
+	AddBall(ball);
     // Audio
     SoundEngine->play2D("assets/audio/breakout.mp3", GL_TRUE);
 }
@@ -115,11 +117,10 @@ void Game::Update(GLfloat dt)
 		Ball->Move(dt, this->Width);
     // Check for collisions
     this->DoCollisions();
-    // Update particles
-	Particles->UpdateAmount(PARTICLE_AMOUNT * Balls.size());
+    // Update particles	
 	for (BallObject *Ball : Balls)
 		if (!Ball->Stuck)
-			Particles->Update(dt, *Ball, 2, glm::vec2(Ball->Radius / 2));
+			ballParticle[Ball]->Update(dt, *Ball, 2, glm::vec2(Ball->Radius / 2));
     // Update PowerUps
     this->UpdatePowerUps(dt);
     // Reduce shake time
@@ -131,7 +132,17 @@ void Game::Update(GLfloat dt)
     }
     // Check loss condition
 	GLfloat height = this->Height;
-	Balls.erase(std::remove_if(Balls.begin(), Balls.end(), [height](BallObject *ball) { return ball->Position.y >= height; }), Balls.end());
+
+	for (std::vector<BallObject *>::iterator it = Balls.begin(); it != Balls.end();)
+	{
+		if ((*it)->Position.y >= this->Height)
+		{
+			it = RemoveBall((*it));
+		}
+		else
+			++it;
+	}
+	//Balls.erase(std::remove_if(Balls.begin(), Balls.end(), [height](BallObject *ball) { return ball->Position.y >= height; }), Balls.end());
 
 	if (Balls.size() == 0) // Did ball reach bottom edge?
 	{
@@ -240,7 +251,7 @@ void Game::Render()
             // Draw particles	
 			for (BallObject *Ball : Balls)
 				if (!Ball->Stuck)
-					Particles->Draw();
+					ballParticle[Ball]->Draw();
             // Draw ball
 			for (BallObject *Ball : Balls)
 				Ball->Draw(*Renderer);            
@@ -290,14 +301,19 @@ void Game::ResetPlayer()
     Player->Position = glm::vec2(this->Width / 2 - PLAYER_SIZE.x / 2, this->Height - PLAYER_SIZE.y);
 
 	glm::vec2 ballPos = Player->Position + glm::vec2(PLAYER_SIZE.x / 2 - BALL_RADIUS, -BALL_RADIUS * 2);
-	Balls.clear();
-	Balls.push_back(new BallObject(ballPos, BALL_RADIUS, INITIAL_BALL_VELOCITY, ResourceManager::GetTexture("face")));
+	for (std::vector<BallObject *>::iterator it = Balls.begin(); it != Balls.end();)
+		it = RemoveBall((*it));
+
+	BallObject *newball = new BallObject(ballPos, BALL_RADIUS, INITIAL_BALL_VELOCITY, ResourceManager::GetTexture("face"));
+	AddBall(newball);
 
     Effects->Chaos = Effects->Confuse = GL_FALSE;
     Player->Color = glm::vec3(1.0f);
 
 	this->ClearPowerUps();
-	Particles->Reset();
+	
+	for (std::map<BallObject *, ParticleGenerator *>::iterator ii = ballParticle.begin(); ii != ballParticle.end(); ++ii)
+		(*ii).second->Reset();
 }
 
 
@@ -414,7 +430,7 @@ void Game::SpawnPowerUps(GameObject &block)
         this->PowerUps.push_back(PowerUp("pad-size-increase", glm::vec3(1.0f, 0.6f, 0.4f), 10.0f, block.Position, ResourceManager::GetTexture("powerup_increase"), VELOCITY * 1.5f));
 	if (ShouldSpawn(75))
 		this->PowerUps.push_back(PowerUp("ball-big", glm::vec3(0.15f, 0.55f, 0.15f), 10.0f, block.Position, ResourceManager::GetTexture("powerup_bigball"), VELOCITY * 1.5f));
-	if (ShouldSpawn(75))
+	if (ShouldSpawn(2))
 		this->PowerUps.push_back(PowerUp("ball-multi", glm::vec3(0.15f, 0.55f, 0.15f), 0.0f, block.Position, ResourceManager::GetTexture("powerup_multiball"), VELOCITY * 1.5f));
 	if (ShouldSpawn(15))
 		this->PowerUps.push_back(PowerUp("pad-size-decrease", glm::vec3(0.8f, 0.6f, 0.2f), 20.0f, block.Position, ResourceManager::GetTexture("powerup_decrease")));
@@ -462,6 +478,7 @@ void ActivatePowerUp(PowerUp &powerUp)
 		newball->Position = Player->Position + glm::vec2(PLAYER_SIZE.x / 2 - BALL_RADIUS, -BALL_RADIUS * 2);
 		newball->Velocity = glm::vec2(-newball->Velocity.x, -glm::abs(newball->Velocity.y));
 		Balls.push_back(newball);
+		ballParticle[newball] = new ParticleGenerator(ResourceManager::GetShader("particle"), ResourceManager::GetTexture("particle"), PARTICLE_AMOUNT);
 	}
 	else if (powerUp.Type == "pad-size-decrease")
 	{
@@ -658,4 +675,29 @@ Direction VectorDirection(glm::vec2 target)
         }
     }
     return (Direction)best_match;
-}   
+}
+
+void AddBall(BallObject *ball)
+{
+	Balls.push_back(ball);
+	if (ballParticle.find(ball) == ballParticle.end())
+		ballParticle[ball] = new ParticleGenerator(ResourceManager::GetShader("particle"), ResourceManager::GetTexture("particle"), PARTICLE_AMOUNT);
+	else
+		ballParticle[ball]->Reset();
+}
+
+std::vector<BallObject *>::iterator RemoveBall(BallObject *ball)
+{
+	if (ballParticle.find(ball) != ballParticle.end())
+	{
+		delete ballParticle[ball];
+		ballParticle.erase(ball);
+	}
+
+	auto it = std::find_if(Balls.begin(), Balls.end(), [ball](const BallObject *_ball) { return ball == _ball; });
+
+	if (it != Balls.end())
+		return Balls.erase(it);
+	else
+		throw;
+}
